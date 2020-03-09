@@ -1,7 +1,11 @@
 # Shiny-Palm-Atlas
 Seeking to replicate palmweb with botanical countries, and then expand upon it with cleaned species occurence points, including options to refine searches.
 
+### Code added by Wolf on 9/3/2020
+
 ```R
+library(sf)
+
 # Wolf's shapefile path
 shapefile_path <- "data/tdwg_level3_shp"
 
