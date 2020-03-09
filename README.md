@@ -42,7 +42,7 @@ str(BotCon)
 
 # plot it
 plot(BotCon[sp])
-``
+```
 
 ![H. petersiana palmweb](H_petersiana_palmweb.jpg)
 
