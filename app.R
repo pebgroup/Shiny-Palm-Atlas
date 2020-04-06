@@ -1,31 +1,42 @@
+install.packages("shiny")
+install.packages("leaflet")
+install.packages("sf")
+install.packages("dplyr")
+install.packages("geojsonio")
+install.packages("rgdal")
+install.packages("magrittr")
+install.packages("jsonlite")
 library(shiny)
 library(leaflet) 
 library(sf)
-#does the mapping features
+library(dplyr)
+library(geojsonio)
+library(rgdal)
+library(magrittr)
+library(jsonlite)
 
-setwd("C:/Users/benra/OneDrive/Documents/Year 3 (Aarhus)/Palm Project/R practice/dataset 1")
-df <- read.csv(file = "5spp.csv")
-#have just set wd to get file, and then read the csv file into a dataframe 
-pam <- table(df[2:1])
-#this puts the dataframe into a spp presence absence matrix and gives it a name 
-pam
-
-#this bit is for the map placeholder I've included within the project 
-r_colors <- rgb(t(col2rgb(colors()) / 255))
-names(r_colors) <- colors()
 
 ############################################# 
 #ACTUAL APP
 ##############################################
 
 ui <- fluidPage(
-#give titular name 
+  #give titular name 
   titlePanel("Palm Atlas"),
-#create sidebar with input channels 
+  #create sidebar with input channels 
   sidebarLayout(
     sidebarPanel(
       helpText("Select variables to create your own Palm Atlas"),
-#spp selection input      
+#species selection input, i want these to be drawn from the database of species eventually    
+#so i want to use the species names in the database, as the choices in input Var1
+#i created a factor, cos it'll hold the names irrespective of how many times they occur, however
+#i'm not sure how to draw from this into the choices, and I haven't been able to find many examples
+#very open to suggestions! :) 
+
+Caryota <- read.csv("Caryota.csv", header = TRUE)
+Caryota$SpecName
+Spp <- Caryota[c(1:57),c(2)]
+
       selectInput(inputId = "var1", 
                   label = "Species Selection",
                   choices = c("Palm 1", 
@@ -33,24 +44,24 @@ ui <- fluidPage(
                               "Palm 3", 
                               "Palm 4"),
                   selected = "Palm 1"),
-#clean/unclean input      
+      #clean/unclean input      
       selectInput(inputId = "var2", 
                   label = "Clean/Unclean",
                   choices = c("Clean", 
                               "Unclean"),
                   selected = "Clean"),
-#Native or all input      
+      #Native or all input      
       selectInput(inputId = "var3", 
                   label = "Native/All",
                   choices = c("Native", 
                               "All"),
                   selected = "Native"),
-#year range of data input      
+      #year range of data input      
       sliderInput(inputId = "range", 
                   label = "Year Range:",
-                  min = 1900, max = 2020, value = c(1900, 2020))
+                  min = 1900, max = 2020, value = c(1900, 2020), sep = "")
     ),
-#create main panel for text outputs and plots     
+    #create main panel for text outputs and plots     
     mainPanel(
       textOutput("selected_var"),
       textOutput("selected_var2"),
@@ -60,15 +71,15 @@ ui <- fluidPage(
       p(),
       actionButton("recalc", "New points")
     )
-      
-    )
+    
   )
+)
 
 
 # Define server logic ----
 server <- function(input, output) {
-#tells server to render the outputs of the various inputs as text
-#these bits go into the main panel 
+  #tells server to render the outputs of the various inputs as text
+  #these bits go into the main panel 
   output$selected_var <- renderText({ 
     paste("You have selected", input$var1)
   })
@@ -82,21 +93,40 @@ server <- function(input, output) {
     paste("You have chosen a range that goes from",
           input$range[1], "to", input$range[2])
   })
-
-#codes for the bit of map I've put in as a proof of concept
+  
+  
+  #this puts in the random points coming up, but I'm envisaging putting in the update button here 
   points <- eventReactive(input$recalc, {
-    cbind(rnorm(40) * 2 + 13, rnorm(40) + 48)
+    cbind(10, 20)
   }, ignoreNULL = FALSE)
   
+  #now we read in the geojson file 
+  geojson <- readLines("level3.geojson", warn = FALSE) %>%
+    paste(collapse = "\n") %>%
+    fromJSON(simplifyVector = FALSE)
+  
+  #this gives it a default colour scheme 
+  geojson$style = list(
+    weight = 1,
+    color = "#555555",
+    opacity = 1,
+    fillOpacity = 0.8
+  )
+  
+  pal <- colorQuantile("Greens", gdp_md_est / pop_est)
+  
+  
+  
   output$mymap <- renderLeaflet({
-    leaflet() %>%
-      addProviderTiles(providers$Stamen.TonerLite,
-                       options = providerTileOptions(noWrap = TRUE)
-      ) %>%
-      addMarkers(data = points())
+    #url <- "https://raw.githubusercontent.com/tdwg/wgsrpd/master/geojson/level3.geojson"
+    #geojson <- jsonlite::fromJSON(url)
+    library("leaflet") %>% 
+      leaflet() %>%
+      addTiles() %>% 
+      addGeoJSON(geojson) %>% 
+      addMarkers(data = points()) 
   })
 }
-  
 
 
 # Runs the app 
@@ -105,75 +135,10 @@ shinyApp(ui = ui, server = server)
 ############################################################
 ############################################################
 
-# Wolf's shapefile path
-shapefile_path <- "data/tdwg_level3_shp"
+BotCon <- rgdal::readOGR("level3.geojson")
+leaflet(BotCon) %>%
+  addTiles()
 
-BotCon <- st_read(paste(shapefile_path, "/level3.shp", sep=""))
-
-# plots the first variable in data frame (LEVEL3_NAM) with some default colour coding
-plot(BotCon[1])
-
-# generates a fake species (just some random 1s and 0s)
-BotCon$mock_species <- sample(c(0,1), 369, replace=TRUE)
-
-# check that variable has been generated corerclty
-str(BotCon)
-
-# plots the mock species with some default colour coding
-plot(BotCon["mock_species"])
-
-# Wolf's path to occurrence data
-occurrence_path <- "data"
-
-# read occurrence data
-occ <- read.csv(paste(occurrence_path, "/palms_in_tdwg3.csv", sep=""))
-
-# choose a species
-sp <- "Hyphaene_petersiana"
-
-# get name of countries in which the species occurs, by selecting all rows in occ that are == species name, and only first column. 
-sp_occ <- as.vector(occ[occ$SpecName == sp,"Area_code_L3"])
-
-# create a new column for the species, all zeros for now
-BotCon[,sp] <- rep(0, nrow(BotCon))
-
-# set the rows where BotCon$LEVEL3_COD in sp_occ to 1
-BotCon[BotCon$LEVEL3_COD %in% sp_occ,sp] <- 1
-
-# check that species has been generated correctly
-str(BotCon)
-
-# plot it
-plot(BotCon[sp])
-
-#Emulating palmtraits although their way refused to work for me, reading the OGR file into a dataframe for usage later
-BotCon <- readOGR(dsn=path.expand("C:/Users/benra/OneDrive/Documents/Year 3 (Aarhus)/Palm Project/R practice/dataset 1/tdwg_level3_shp"), 
-                  layer="level3")
-#they also did this, which I assume sorts some row names out, but have little idea really 
-BotCon@data$id <- rownames(BotCon@data)
-
-
-#these stages were included by palmtraits to refine the polygons, which i assume theyre doing because 
-#the polygons are a bit old and didn't look nice enough to publish
-shape2 <- gSimplify(spgeom = BotCon, tol = 0.01, topologyPreserve = TRUE) 
-BotCon <- SpatialPolygonsDataFrame(shape2, BotCon@data)
-shape_centroid <- gCentroid(BotCon, byid = TRUE)
-BotCon@data$centroid_long <- shape_centroid$x
-BotCon@data$centroid_lat <- shape_centroid$y
-shape_fort <- fortify(BotCon, id = id)
-shape_gg <- merge(shape_fort, BotCon@data, by = "id")
-
-#this bit then reads the occurence data into R, and I've chosen to keep with 5 species thuse far, 
-#as it hould hopefully make stuff easier for me
-occ <- read.csv(file.path( "5spp.csv"), stringsAsFactors = FALSE)
-occ$SpecName <- gsub(occ$SpecName, pattern = "_", replacement = " ")
-
-
-### so I've got my dataframes here, and both presumably can be sorted via their species names, and their botanical countries
-#I'm unsure if I even can put them together in a normal R map first, because it wouldn't have the interactivty required 
-#so then I need to try doing it in shiny first of all, 
-#because I can't do a simple unreactive one that would demonstrate what I need sufficiently.
-#I should be able to combine my 5 species dataset and the large one containing the polygons, because the polygons just set out the map right?
-#I don't know and havent been able to figure out how to do so, but once I have this template, 
-#I'm fairly sure adding in occurence points on the map should then be easier, because there's numerous examples online 
-#its just squishing these datasets together, and then i can link them to my drop down palm species menu 
+Bot2 <- rgdal::readOGR("level3link.geojson")
+leaflet(Bot2) %>% 
+  addTiles()
