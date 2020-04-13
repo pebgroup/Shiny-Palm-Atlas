@@ -24,7 +24,6 @@ shinyServer ( function(input, output) {
     cbind(10, 20)
   }, ignoreNULL = FALSE)
   
-  Botcon <- geojsonio::geojson_read("level3link.geojson", what = "sp")
   
   output$mymap <- renderLeaflet({
     leaflet(shape) %>%

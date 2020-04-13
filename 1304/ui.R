@@ -7,7 +7,7 @@ shinyUI( fluidPage(
   sidebarLayout(
     sidebarPanel(
       helpText("Select variables to create your own Palm Atlas"),
-      #species selection input
+#species selection input, using Palm database names to get all of them 
       
       selectInput(inputId = "var1", 
                   label = "Species Selection",
