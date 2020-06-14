@@ -1,53 +1,40 @@
-# Shiny-Palm-Atlas
-Seeking to replicate palmweb with botanical countries, and then expand upon it with cleaned species occurence points, including options to refine searches.
+# Shiny-Palm-Atlas - cleaning levels 
+This projects seeks to clean data in a reproducible and reliable manner. To this end, the coordinate cleaner package from R was chosen to supply the cleaning function; https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13152. 
 
-### Code added by Wolf on 9/3/2020
+Coordinate cleaner is:
+"an r ‐package to scan datasets of species occurrence records for geo‐referencing and dating imprecisions and data entry errors in a standardized and reproducible way. 
+CoordinateCleaner is tailored to problems common in biological and palaeontological databases and can handle datasets with millions of records. 
+The software includes: 
+(a) functions to flag potentially problematic coordinate records based on geographical gazetteers
+(b) a global database of 9,691 geo‐referenced biodiversity institutions to identify records that are likely from horticulture or captivity
+(c) novel algorithms to identify datasets with rasterized data, conversion errors and strong decimal rounding
+(d) spatio‐temporal tests for fossils." - https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13152
 
-```R
-library(sf)
+Notably and importantly:
+"All cleaning functions and the biodiversity institution database are open‐source and available within the CoordinateCleaner r ‐package." - https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13152
 
-# Wolf's shapefile path
-shapefile_path <- "data/tdwg_level3_shp"
+The following code is used for the full cleaning of data:
 
-BotCon <- st_read(paste(shapefile_path, "/level3.shp", sep=""))
+### Code added by Ben on 14/06/2020
 
-# plots the first variable in data frame (LEVEL3_NAM) with some default colour coding
-plot(BotCon[1])
-
-# generates a fake species (just some random 1s and 0s)
-BotCon$mock_species <- sample(c(0,1), 369, replace=TRUE)
-
-# check that variable has been generated corerclty
-str(BotCon)
-
-# plots the mock species with some default colour coding
-plot(BotCon["mock_species"])
-
-# Wolf's path to occurrence data
-occurrence_path <- "data"
-
-# read occurrence data
-occ <- read.csv(paste(occurrence_path, "/palms_in_tdwg3.csv", sep=""))
-
-# choose a species
-sp <- "Hyphaene_petersiana"
-
-# get name of countries in which the species occurs, by selecting all rows in occ that are == species name, and only first column. 
-sp_occ <- as.vector(occ[occ$SpecName == sp,"Area_code_L3"])
-
-# create a new column for the species, all zeros for now
-BotCon[,sp] <- rep(0, nrow(BotCon))
-
-# set the rows where BotCon$LEVEL3_COD in sp_occ to 1
-BotCon[BotCon$LEVEL3_COD %in% sp_occ,sp] <- 1
-
-# check that species has been generated correctly
-str(BotCon)
-
-# plot it
-plot(BotCon[sp])
+``` cc_val()  # removes or flags non-numeric and not available coordinates 
+  cc_equ()  # removes or flags records with equal latitude and longitude coordinates
+  cc_cap()  # removes or flags records within a certain radius around country capitals
+  cc_cen()  # removes or flags records within a radius around the geographic centroids of political countries and provinces
+  cc_gbif()  # removes or flags records within a radius around the GBIF headquarters 
+  cc_inst()  # removes or flags records assigned to the location of zoos, botanical gardens, herbaria, universities and museums
+  cc_sea()  # removes or flags coordinates outside the reference landmass. A custom gazetteer with a 1âdegree buffer for cc_sea is used to avoid flagging records close to the coastline
+  cc_zero()  # removes or flags records with either zero longitude or latitude and a radius around the point at zero longitude and zero latitude
+  cc_urb()  # removes or flags records from inside urban areas
+  cc_dupl(lon = "decimallongitude", lat = "decimallatitude") # removes or flags duplicated records based on species name and coordinates
 ```
 
-![H. petersiana palmweb](H_petersiana_palmweb.jpg)
+The following code is for partial cleaning of data: 
 
-![H. petersiana sf](H_petersiana_sf.jpg)
+### Code added by Ben on 14/06/2020
+
+```cc_val() %>% # removes or flags non-numeric and not available coordinates !
+  cc_equ() %>% # removes or flags records with equal latitude and longitude coordinates !
+  cc_zero() %>% # removes or flags records with either zero longitude or latitude and a radius around the point at zero longitude and zero latitude !
+  cc_dupl(lon = "decimallongitude", lat = "decimallatitude") # removes or flags duplicated records based on species name and coordinates !
+```
