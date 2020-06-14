@@ -35,8 +35,8 @@ The following code is for partial cleaning of data:
 ### Code added by Ben on 14/06/2020
 
 ```
-  cc_val() %>% # removes or flags non-numeric and not available coordinates !
-  cc_equ() %>% # removes or flags records with equal latitude and longitude coordinates !
-  cc_zero() %>% # removes or flags records with either zero longitude or latitude and a radius around the point at zero longitude and zero latitude !
+  cc_val()  # removes or flags non-numeric and not available coordinates !
+  cc_equ()  # removes or flags records with equal latitude and longitude coordinates !
+  cc_zero()  # removes or flags records with either zero longitude or latitude and a radius around the point at zero longitude and zero latitude !
   cc_dupl(lon = "decimallongitude", lat = "decimallatitude") # removes or flags duplicated records based on species name and coordinates !
 ```
