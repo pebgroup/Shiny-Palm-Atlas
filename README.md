@@ -1,4 +1,12 @@
-# Shiny-Palm-Atlas - cleaning levels 
+# Shiny-Palm-Atlas 
+
+The CaryotAtlas is envisaged as the intial steps towards an eventual Palm Atlas, encompassing all species of Arecaceae. 
+
+To operate the app, first highlight all script in the unified script file; do this with Ctrl/A, and then run the entire script. 
+Once this data is in your global enviroment (which takes less than 2 minutes to run on the developer laptop), by going to either global, ui or server, and then clicking the "Run App" button, the app will run. 
+Once this app has loaded, then clicking the "open in browser" button will allow the downloading of created datasets. 
+
+# Cleaning levels 
 This projects seeks to clean data in a reproducible and reliable manner. To this end, the coordinate cleaner package from R was chosen to supply the cleaning function; https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13152. 
 
 Coordinate cleaner is:
